@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'step-*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      CI: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: German and English have the same keys
+        run: pnpm messages:check
+
+      # The app's JavaScript for both platforms, as the release builds make it.
+      - name: Bundle the app (Android and iOS)
+        working-directory: apps/xenrooms
+        run: npx expo export --platform android --platform ios --source-maps --output-dir "$RUNNER_TEMP/dist"
+
+      - name: Licenses of what is inside the app
+        run: node scripts/check-licenses.mjs --dist "$RUNNER_TEMP/dist"
+
+  # Whether the copied texts of Rooms still match the web client's. A warning
+  # only: the web client moves on its own, `pnpm messages:sync` catches up.
+  messages-current:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: xenaxiocom/webmail
+          path: webmail-src
+          sparse-checkout: lib/xenaxio
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compare with the web client
+        run: node scripts/sync-messages.mjs --check --webmail webmail-src

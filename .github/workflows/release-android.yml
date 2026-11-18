@@ -1,0 +1,102 @@
+name: Release Android (APK)
+
+# android/ is not committed: `expo prebuild` makes it on every run, so every
+# native setting lives in apps/xenrooms/app.config.js.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: release-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      CI: "1"
+      # Android refuses an update with a versionCode it has seen: one per run.
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check for the signing key
+        id: creds
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::The Android signing secrets are not set: building without publishing an APK."
+          fi
+
+      - name: Generate the Android project
+        working-directory: apps/xenrooms
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build the release APK
+        working-directory: apps/xenrooms/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      # The generated project signs a release with the debug key; the real key
+      # replaces that signature here, so no key ever goes into the project.
+      - name: Sign with the release key
+        if: steps.creds.outputs.signed == 'true'
+        id: sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          VERSION=$(tr -d '[:space:]' < apps/xenrooms/VERSION)
+          OUT="xenrooms-${VERSION}-${BUILD_NUMBER}.apk"
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
+            --out "$OUT" apps/xenrooms/android/app/build/outputs/apk/release/app-release.apk
+          rm -f "$RUNNER_TEMP/release.jks"
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$OUT" | grep -v '^WARNING'
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.creds.outputs.signed == 'true'
+        with:
+          name: ${{ steps.sign.outputs.path }}
+          path: ${{ steps.sign.outputs.path }}
+          if-no-files-found: error
+
+      - name: Attach the APK to the release
+        if: steps.creds.outputs.signed == 'true' && github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.sign.outputs.path }}" --clobber

@@ -1,0 +1,22 @@
+{
+  "name": "xenrooms-mobile",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "licenses:check": "node scripts/check-licenses.mjs",
+    "messages:sync": "node scripts/sync-messages.mjs",
+    "messages:check": "node scripts/sync-messages.mjs --check",
+    "icons": "node scripts/icons.mjs",
+    "check": "pnpm typecheck && pnpm test && pnpm licenses:check && pnpm messages:check"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.12"
+  }
+}
