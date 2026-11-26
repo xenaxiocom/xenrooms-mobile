@@ -75,15 +75,18 @@ describe('company order on the platform (rule 10)', () => {
     expect(moved(['a', 'b', 'c'], 'a', -1)).toEqual(['a', 'b', 'c']);
   });
 
-  it('reads the first stored order and writes it into every account, keeping the rest of the document', async () => {
+  it('reads the newest stored order and writes it into every account, keeping the rest of the document', async () => {
     const accounts = accountsFromToken(answer);
-    settings.docs.set('t1', { theme: 'dark' });
-    settings.docs.set('t2', { [ORDER_KEY]: ['u2', 'u1'], locale: 'de' });
+    // The browser changed it in one company's document after the phone wrote both.
+    settings.docs.set('t1', { theme: 'dark', [ORDER_KEY]: { order: ['u1', 'u2'], at: 100 } });
+    settings.docs.set('t2', { [ORDER_KEY]: { order: ['u2', 'u1'], at: 200 }, locale: 'de' });
     expect(await readOrder(accounts)).toEqual(['u2', 'u1']);
-    await writeOrder(accounts, ['u1', 'u2']);
+    settings.docs.set('t2', { [ORDER_KEY]: ['u2', 'u1'], locale: 'de' });
+    expect(await readOrder(accounts)).toEqual(['u1', 'u2']);
+    await writeOrder(accounts, ['u1', 'u2'], 300);
     expect(settings.posted).toEqual([
-      { token: 't1', body: { username: 'max@acme.de', serverUrl: 'https://xenrooms.app', settings: { theme: 'dark', [ORDER_KEY]: ['u1', 'u2'] } } },
-      { token: 't2', body: { username: 'eva@beta.de', serverUrl: 'https://xenrooms.app', settings: { locale: 'de', [ORDER_KEY]: ['u1', 'u2'] } } },
+      { token: 't1', body: { username: 'max@acme.de', serverUrl: 'https://xenrooms.app', settings: { theme: 'dark', [ORDER_KEY]: { order: ['u1', 'u2'], at: 300 } } } },
+      { token: 't2', body: { username: 'eva@beta.de', serverUrl: 'https://xenrooms.app', settings: { locale: 'de', [ORDER_KEY]: { order: ['u1', 'u2'], at: 300 } } } },
     ]);
   });
 });
