@@ -1,7 +1,22 @@
 {
   "app": {
     "name": "XenRooms",
-    "tagline": "Der Chat deiner Firma",
-    "planning_note": "Anmeldung folgt in der nächsten Version."
+    "tagline": "Der Chat Ihrer Firmen",
+    "sign_in": "Mit Xenaxio anmelden",
+    "own_address": "Eigene Adresse",
+    "address_label": "Adresse Ihres Xenaxio",
+    "address_invalid": "Bitte eine Adresse mit https angeben, z. B. chat.firma.de.",
+    "sign_in_failed": "Die Anmeldung hat nicht geklappt. Bitte versuchen Sie es erneut.",
+    "sign_in_denied": "Die Anmeldung wurde abgebrochen.",
+    "companies": "Firmen",
+    "add_company": "Firma hinzufügen",
+    "move_up": "Nach oben",
+    "move_down": "Nach unten",
+    "sign_out": "Abmelden",
+    "sign_out_title": "Abmelden?",
+    "sign_out_text": "{company} wird auf diesem Telefon abgemeldet. Die anderen Firmen bleiben angemeldet.",
+    "cancel": "Abbrechen",
+    "open_companies": "Firmen öffnen",
+    "unread": "{count} ungelesen"
   }
 }

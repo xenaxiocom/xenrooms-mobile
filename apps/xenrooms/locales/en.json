@@ -1,7 +1,22 @@
 {
   "app": {
     "name": "XenRooms",
-    "tagline": "Your company's chat",
-    "planning_note": "Sign-in comes with the next version."
+    "tagline": "Your companies' chat",
+    "sign_in": "Sign in with Xenaxio",
+    "own_address": "Own address",
+    "address_label": "Address of your Xenaxio",
+    "address_invalid": "Please give an address with https, e.g. chat.company.com.",
+    "sign_in_failed": "Signing in did not work. Please try again.",
+    "sign_in_denied": "Signing in was cancelled.",
+    "companies": "Companies",
+    "add_company": "Add a company",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "sign_out": "Sign out",
+    "sign_out_title": "Sign out?",
+    "sign_out_text": "{company} will be signed out on this phone. The other companies stay signed in.",
+    "cancel": "Cancel",
+    "open_companies": "Open companies",
+    "unread": "{count} unread"
   }
 }
