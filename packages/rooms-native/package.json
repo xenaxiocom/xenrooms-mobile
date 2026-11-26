@@ -6,17 +6,22 @@
   "description": "Xenaxio Rooms screens for React Native: used by the XenRooms app and as the Rooms tab of the Xenaxio app.",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "files": ["src", "locales"],
+  "files": [
+    "src",
+    "locales"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit -p ."
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "expo-clipboard": "*"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "expo-clipboard": "~8.0.8"
   }
 }

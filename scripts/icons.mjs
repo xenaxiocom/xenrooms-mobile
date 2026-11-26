@@ -33,4 +33,11 @@ await sharp(FIELD).resize(1024, 1024, { kernel: 'lanczos3' }).flatten({ backgrou
 await (await padded(1024, 0.62)).toFile(path.join(ASSETS, 'adaptive-icon.png'));
 await (await padded(1024, 0.6)).toFile(path.join(ASSETS, 'splash-icon.png'));
 await sharp(MARK).resize(288, 288, { kernel: 'lanczos3' }).png({ compressionLevel: 9 }).toFile(path.join(ASSETS, 'logo.png'));
+// Android's notification icon: the mark's silhouette in white on transparent.
+const silhouette = await (await padded(96, 0.9)).toBuffer();
+const alpha = await sharp(silhouette).ensureAlpha().extractChannel(3).raw().toBuffer();
+await sharp({ create: { width: 96, height: 96, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+  .joinChannel(alpha, { raw: { width: 96, height: 96, channels: 1 } })
+  .png({ compressionLevel: 9 })
+  .toFile(path.join(ASSETS, 'notification-icon.png'));
 console.log(`Icons written to ${path.relative(ROOT, ASSETS)}`);

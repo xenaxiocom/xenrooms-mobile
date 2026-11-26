@@ -40,9 +40,19 @@ module.exports = {
       package: 'com.xenaxio.xenrooms',
       versionCode: Number(BUILD_NUMBER),
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: MARK_FIELD },
+      // FCM: CI writes our Firebase file from the GOOGLE_SERVICES_JSON secret; without it the
+      // app builds without push on Android.
+      ...(fs.existsSync(path.join(__dirname, 'google-services.json')) ? { googleServicesFile: './google-services.json' } : {}),
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
-    plugins: ['expo-localization', './plugins/ios-signing'],
+    plugins: [
+      'expo-localization',
+      'expo-secure-store',
+      'expo-web-browser',
+      // TestFlight and App Store builds get production APNs tokens; development builds the sandbox.
+      ['expo-notifications', { icon: './assets/notification-icon.png', mode: process.env.APS_ENVIRONMENT === 'development' ? 'development' : 'production' }],
+      './plugins/ios-signing',
+    ],
   },
 };
